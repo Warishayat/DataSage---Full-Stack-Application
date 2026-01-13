@@ -1,0 +1,12 @@
+langchain 
+langgraph
+langchain-community
+langchain_groq
+langchain_google_genai
+numpy
+pandas
+fastapi
+uvicorn
+pydantic
+pydantic[email]
+supabase
