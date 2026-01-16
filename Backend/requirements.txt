@@ -10,3 +10,4 @@ uvicorn
 pydantic
 pydantic[email]
 langchain_huggingface
+sentence_transformers
