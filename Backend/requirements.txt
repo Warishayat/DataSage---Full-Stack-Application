@@ -9,4 +9,4 @@ fastapi
 uvicorn
 pydantic
 pydantic[email]
-supabase
+langchain_huggingface
