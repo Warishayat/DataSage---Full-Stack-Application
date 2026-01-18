@@ -1,3 +1,49 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Poori body aur screen ko dark background force karna */
+  html, body {
+    @apply bg-slate-950 text-white;
+    background-color: #020617 !important; /* Force Dark Slate */
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* --- CHROME, EDGE, SAFARI SCROLLBAR (STUNNING FIX) --- */
+  ::-webkit-scrollbar {
+    width: 10px !important; /* Thura wazeh width */
+    height: 10px !important;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #020617 !important; /* Match Slate-950 background */
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b !important; 
+    border-radius: 100px !important;
+    border: 3px solid #020617 !important; 
+    transition: all 0.3s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #10b981 !important;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #1e293b #020617;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
