@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from Core.database import get_supabase
+from Core.database import get_supabase_client
 from Utils.sys_validation import RegisterHandle,LoginHandle
 
 router = APIRouter(
@@ -8,7 +8,7 @@ router = APIRouter(
 )
 
 @router.post("/register")
-def register_user(data: RegisterHandle, supabase=Depends(get_supabase)):
+def register_user(data: RegisterHandle, supabase=Depends(get_supabase_client)):
     try:
         res = supabase.auth.sign_up({
             "email": data.email,
@@ -34,7 +34,7 @@ def register_user(data: RegisterHandle, supabase=Depends(get_supabase)):
 
 
 @router.post("/login")
-def login_user(data: LoginHandle, supabase=Depends(get_supabase)):
+def login_user(data: LoginHandle, supabase=Depends(get_supabase_client)):
     try:
         res = supabase.auth.sign_in_with_password({
             "email": data.email,

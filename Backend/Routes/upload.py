@@ -1,9 +1,10 @@
 from fastapi import APIRouter, UploadFile, File, Depends,HTTPException
 import uuid, os
-from Core.database import get_supabase
+from Core.database import get_supabase_client
 from Utils.Security import get_current_user
 from Langgraph.graph import Analysis_graph
 from Langgraph.states import DataState
+import traceback
 from Utils.sys_validation import sanitize
 
 upload_router = APIRouter(
@@ -17,7 +18,7 @@ async def upload_csv(
     user = Depends(get_current_user) 
 ):
     try:
-        supabase = get_supabase()
+        supabase = get_supabase_client()
         user_id = user.id
 
         file_id = str(uuid.uuid4())
@@ -68,4 +69,5 @@ async def upload_csv(
             "result": safe_result
         }
     except Exception as e:
-        raise HTTPException(status_code=500,detail="Internel Server Error")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))

@@ -42,11 +42,4 @@ def report_node(state: DataState):
     }
 
 
-def chat_node(state: DataState):
-    return {
-        "answer": chat_agent(
-            question=state["question"],
-            eda=state["eda"],
-            insights=state["insights"]
-        )
-    }
+

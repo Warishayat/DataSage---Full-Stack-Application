@@ -83,6 +83,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 import os
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_groq import ChatGroq
 from typing import Any, Dict
 from Agents.Schemas import InsightResponse
 import warnings
@@ -90,12 +91,12 @@ warnings.filterwarnings("ignore")
 
 load_dotenv()
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-Model = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+Model = ChatGroq(
+    model="openai/gpt-oss-20b",
     temperature=0.3,
-    api_key=GOOGLE_API_KEY
+    api_key=GROQ_API_KEY
 )
 
 prompt = ChatPromptTemplate.from_messages([

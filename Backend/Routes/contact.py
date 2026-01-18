@@ -1,12 +1,12 @@
 from fastapi import FastAPI,HTTPException,Depends,APIRouter
-from Core.database import get_supabase
+from Core.database import get_supabase_client
 from Utils.sys_validation import ChatwithusValidation
 
 contact_router = APIRouter(prefix="/contact",
                         tags=['Contact with admin in case of queries or Hiring me for project'])
 
 @contact_router.post("/send")
-def chatwithus(payload:ChatwithusValidation,supabase = Depends(get_supabase)):
+def chatwithus(payload:ChatwithusValidation,supabase = Depends(get_supabase_client)):
     try:
         response = supabase.table("ChatUs").insert({
         "name": payload.name,

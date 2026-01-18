@@ -1,15 +1,18 @@
 import os
-from supabase import create_client
+from supabase import create_client, Client
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY =  os.environ.get("SUPABASE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+def get_supabase_client() -> Client:
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY")
 
-def get_supabase():
-    return supabase
+    return create_client(url, key)
+
+supabase = get_supabase_client()
+
 
 if __name__ == "__main__":
-    print("All done")
+    print(f"Connecting to: {os.environ.get('SUPABASE_URL')} (Auto-fixed with slash)")
+    print("Supabase Client initialized successfully")

@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status,Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
-from Core.database import get_supabase
+from Core.database import get_supabase_client
 import os
 
 pwd_context = CryptContext(
@@ -26,7 +26,7 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     token = credentials.credentials
-    supabase = get_supabase()
+    supabase = get_supabase_client()
 
     try:
         res = supabase.auth.get_user(token)

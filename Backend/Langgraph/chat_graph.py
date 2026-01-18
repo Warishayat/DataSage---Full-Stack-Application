@@ -68,18 +68,28 @@ def create_vectorstore(documents, embeddings):
 def build_prompt(metadata):
     return ChatPromptTemplate.from_template(
         """
-You are an AI assistant answering questions about a CSV dataset.
+You are an AI assistant chatting with a CSV dataset.
+
+STRICT OUTPUT RULES (MANDATORY):
+- Never use bold text.
+- Never use markdown.
+- Never format text into columns or lists.
+- Write plain sentences only.
+- Do not emphasize words.
+- Do not decorate the response in any way.
+
+BEHAVIOR RULES:
+- Never count rows or values unless explicitly asked.
+- Column-related questions must be answered using metadata only.
+- Do not infer numbers from context text.
+- If a question is ambiguous, ask for clarification in one simple sentence.
+- If information is not available, say: Not available in dataset.
 
 Dataset Metadata:
-- Total Columns: {total_columns}
-- Column Names: {columns}
+Total Columns: {total_columns}
+Column Names: {columns}
 
-Rules:
-- If the user asks about number of columns, answer ONLY using metadata.
-- If the question is conceptual, use the provided context.
-- If the answer is not present, say "Not available in dataset".
-
-Context:
+Context (only for data-level questions):
 {context}
 
 Question:
