@@ -25,8 +25,7 @@ const Insight = () => {
     try {
       const response = await axios.post('https://datasage-backend-jrjo.onrender.com/upload/upload-csv/', formData, {
         headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data' 
+          'Authorization': `Bearer ${token}`
         }
       });
       if (response.data?.result) {

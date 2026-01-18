@@ -15,8 +15,16 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('https://datasage-backend-jrjo.onrender.com/auth/login', formData);
-    
+      const response = await axios.post(
+      'https://datasage-backend-jrjo.onrender.com/auth/login',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
       login(response.data.access_token, response.data.user);
       
       toast.success("Welcome back to DataSage!");

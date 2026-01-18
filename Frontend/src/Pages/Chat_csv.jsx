@@ -30,13 +30,16 @@ const Chat_csv = () => {
     formData.append('file', selectedFile);
 
     try {
-      await axios.post('https://datasage-backend-jrjo.onrender.com/csv-chat/upload', formData, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data' 
+      await axios.post(
+        'https://datasage-backend-jrjo.onrender.com/csv-chat/upload/',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      });
-      setFile(selectedFile);
+      );
+            setFile(selectedFile);
       setIsUploaded(true);
       toast.success("CSV Engine Ready!");
       setMessages([{ role: 'bot', content: `Dataset "${selectedFile.name}" analyzed successfully. How can I assist your research today?` }]);
@@ -58,9 +61,15 @@ const Chat_csv = () => {
     setChatLoading(true);
 
     try {
-      const response = await axios.post(`https://datasage-backend-jrjo.onrender.com/csv-chat/chat?question=${encodeURIComponent(currentInput)}`, {}, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await axios.post(
+      `https://datasage-backend-jrjo.onrender.com/csv-chat/chat/?question=${encodeURIComponent(currentInput)}`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
       setMessages(prev => [...prev, { role: 'bot', content: response.data.answer }]);
     } catch (err) {
       toast.error("Query processing error");
