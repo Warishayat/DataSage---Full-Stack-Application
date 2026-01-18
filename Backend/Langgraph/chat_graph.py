@@ -12,16 +12,24 @@ from langchain_community.vectorstores import FAISS
 
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
-from Langgraph.chat_state import GraphState
+
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+
+class GraphState(TypedDict):
+    question: str
+    context: str
+    answer: str
+
 
 llm = ChatGroq(
     model="openai/gpt-oss-20b",
     temperature=0,
     api_key=GROQ_API_KEY
 )
+
 
 def get_csv_metadata(file_path: str):
     df = pd.read_csv(file_path)
@@ -32,13 +40,11 @@ def get_csv_metadata(file_path: str):
 
 
 def load_data(file_path: str):
-    print("data is getting loaded")
     loader = CSVLoader(file_path=file_path)
     return loader.load()
 
 
 def preprocess_data(data):
-    print("Data got preprocess")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=230,
         chunk_overlap=12
@@ -47,18 +53,17 @@ def preprocess_data(data):
 
 
 def load_embeddings():
-    print("Loading embedding model")
     return HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
 
 def create_vectorstore(documents, embeddings):
-    print("vectorstore created")
     return FAISS.from_documents(
         documents=documents,
         embedding=embeddings
     )
+
 
 def build_prompt(metadata):
     return ChatPromptTemplate.from_template(
@@ -84,50 +89,60 @@ Answer:
 """
     )
 
-def retrieve_node(state: GraphState):
-    docs = retriever.invoke(state["question"])
-    context = "\n".join([doc.page_content for doc in docs])
-    return {"context": context}
 
+def build_csv_chat_graph(retriever, metadata, llm):
 
-def generate_node(state: GraphState):
-    messages = prompt.format_messages(
-        question=state["question"],
-        context=state["context"],
-        columns=", ".join(metadata["columns"]),
-        total_columns=metadata["total_columns"]
-    )
-    response = llm.invoke(messages)
-    return {"answer": response.content}
+    prompt = build_prompt(metadata)
 
+    def retrieve_node(state: GraphState):
+        docs = retriever.invoke(state["question"])
+        context = "\n".join(d.page_content for d in docs)
+        return {"context": context}
 
-graph = StateGraph(GraphState)
+    def generate_node(state: GraphState):
+        messages = prompt.format_messages(
+            question=state["question"],
+            context=state["context"],
+            columns=", ".join(metadata["columns"]),
+            total_columns=metadata["total_columns"]
+        )
+        response = llm.invoke(messages)
+        return {"answer": response.content}
 
-graph.add_node("retrieve", retrieve_node)
-graph.add_node("generate", generate_node)
-graph.set_entry_point("retrieve")
-graph.add_edge("retrieve", "generate")
-graph.add_edge("generate", END)
+    graph = StateGraph(GraphState)
+    graph.add_node("retrieve", retrieve_node)
+    graph.add_node("generate", generate_node)
+    graph.set_entry_point("retrieve")
+    graph.add_edge("retrieve", "generate")
+    graph.add_edge("generate", END)
 
-CHAT_GRPAH = graph.compile()
+    return graph.compile()
+
 
 if __name__ == "__main__":
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     filepath = os.path.join(BASE_DIR, "Data", "CVD Dataset.csv")
+
     metadata = get_csv_metadata(filepath)
     raw_data = load_data(filepath)
     docs = preprocess_data(raw_data)
     embeddings = load_embeddings()
     vectorstore = create_vectorstore(docs, embeddings)
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-    prompt = build_prompt(metadata)
-    print("\nLangGraph CSV Assistant (type 'exit' to quit)\n")
+
+    CHAT_GRAPH = build_csv_chat_graph(
+        retriever=retriever,
+        metadata=metadata,
+        llm=llm
+    )
+
+    print("\nCSV Chat Ready (type 'exit' to quit)\n")
 
     while True:
         query = input("User: ")
         if query.lower() == "exit":
             break
 
-        result = CHAT_GRPAH.invoke({"question": query})
+        result = CHAT_GRAPH.invoke({"question": query})
         print("Assistant:", result["answer"], "\n")

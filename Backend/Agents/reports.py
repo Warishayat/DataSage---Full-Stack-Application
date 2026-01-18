@@ -8,21 +8,20 @@ def ensure_dir(path: str):
         os.makedirs(path)
 
 
-
 def build_overview_md(overview: Dict[str, Any]) -> str:
     return f"""
 ## 📊 Dataset Overview
 
-- **Total Rows:** {overview.get("rows")}
-- **Total Columns:** {overview.get("columns")}
+- **Total Rows:** {int(overview.get("rows"))}
+- **Total Columns:** {int(overview.get("columns"))}
 """
 
 
 def build_column_types_md(column_types: Dict[str, Any]) -> str:
     md = "## 🧩 Column Types\n"
     for k, v in column_types.items():
-        md += f"\n**{k.title()} Columns ({len(v)}):**\n"
-        md += ", ".join(v) if v else "None"
+        md += f"\n**{k.title()} Columns ({int(len(v))}):**\n"
+        md += ", ".join(map(str, v)) if v else "None"
         md += "\n"
     return md
 
@@ -32,14 +31,19 @@ def build_summary_md(stats: Dict[str, Any]) -> str:
     for col, values in stats.items():
         md += f"\n### {col}\n"
         for k, v in values.items():
-            md += f"- {k}: {round(v, 4) if isinstance(v, float) else v}\n"
+            if isinstance(v, float):
+                md += f"- {k}: {round(float(v), 4)}\n"
+            elif isinstance(v, int):
+                md += f"- {k}: {int(v)}\n"
+            else:
+                md += f"- {k}: {v}\n"
     return md
 
 
-def build_missing_md(missing: Dict[str, int]) -> str:
+def build_missing_md(missing: Dict[str, Any]) -> str:
     md = "## ❗ Missing Values\n"
     for col, cnt in missing.items():
-        md += f"- {col}: {cnt}\n"
+        md += f"- {col}: {int(cnt)}\n"
     return md
 
 
@@ -48,19 +52,18 @@ def build_outliers_md(outliers: Dict[str, Any]) -> str:
     for col, o in outliers.items():
         md += (
             f"\n### {col}\n"
-            f"- Lower Bound: {o['lower_bound']}\n"
-            f"- Upper Bound: {o['upper_bound']}\n"
-            f"- Outliers Count: {o['outliers_count']}\n"
+            f"- Lower Bound: {float(o['lower_bound'])}\n"
+            f"- Upper Bound: {float(o['upper_bound'])}\n"
+            f"- Outliers Count: {int(o['outliers_count'])}\n"
         )
     return md
 
 
-def build_insights_md(insights) -> str:
+def build_insights_md(insights: Any) -> str:
     md = "## 🧠 AI-Generated Insights\n"
-
     if hasattr(insights, "key_insights"):
         for i, insight in enumerate(insights.key_insights, 1):
-            md += f"\n{i}. {insight}\n"
+            md += f"\n{int(i)}. {insight}\n"
 
     if hasattr(insights, "recommendations"):
         md += "\n### 📌 Recommendations\n"
@@ -71,10 +74,7 @@ def build_insights_md(insights) -> str:
         md += "\n### ⚠️ Risks & Anomalies\n"
         for r in insights.risks:
             md += f"- {r}\n"
-
     return md
-
-
 
 
 def markdown_to_html(md: str) -> str:
@@ -99,17 +99,13 @@ code {{ background: #f4f4f4; padding: 2px 4px; }}
 """
 
 
-
 def report_agent(
     eda: Dict[str, Any],
     charts: Dict[str, Any],
-    insights: Dict[str, Any],
+    insights: Any,
     output_dir: str = "reports",
     format: str = "markdown"
 ) -> Dict[str, Any]:
-    """
-    Generate automated data analysis report
-    """
 
     ensure_dir(output_dir)
 
@@ -117,7 +113,6 @@ def report_agent(
     base_name = f"data_report_{timestamp}"
 
     md = f"# 📘 Automated Data Analysis Report\n\nGenerated on **{timestamp}**\n\n"
-
     md += build_overview_md(eda["overview"])
     md += build_column_types_md(eda["column_types"])
     md += build_summary_md(eda["summary_statistics"])
@@ -145,24 +140,19 @@ def report_agent(
     return result
 
 
-
-import os
-from pprint import pprint
-from Agents.data_cleaning import Preprocess_data
-from Agents.eda import run_eda_agent
-from Agents.visualization import visualization_agent
-from Agents.insight import insight_agent
-
 if __name__ == "__main__":
-    print("DataSage Pipeline Started...\n")
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(
-        BASE_DIR,
-        "Data",
-        "Heart_Disease_Prediction.csv"
-    )
-    preprocess_response = Preprocess_data(file_path=filepath)
+    from pprint import pprint
+    from Agents.data_cleaning import Preprocess_data
+    from Agents.eda import run_eda_agent
+    from Agents.visualization import visualization_agent
+    from Agents.insight import insight_agent
 
+    print("DataSage Pipeline Started...\n")
+
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filepath = os.path.join(BASE_DIR, "Data", "Heart_Disease_Prediction.csv")
+
+    preprocess_response = Preprocess_data(file_path=filepath)
     if preprocess_response["status"] != "success":
         raise RuntimeError(preprocess_response["message"])
 
@@ -174,28 +164,24 @@ if __name__ == "__main__":
     eda_response = run_eda_agent(df=df)
     print("EDA Completed\n")
 
-    charts = visualization_agent(df=df,metadata=metadata)
+    charts = visualization_agent(df=df, metadata=metadata)
     print("Visualization Metadata Generated\n")
 
-
-    insights = insight_agent(
-        eda=eda_response,
-        metadata=metadata
-    )
+    insights = insight_agent(eda=eda_response, metadata=metadata)
     print("LLM Insights Generated\n")
 
     report = report_agent(
         eda=eda_response,
         charts=charts,
         insights=insights,
-        format="html"   
+        format="html"
     )
 
     print("Report Generated Successfully\n")
 
     pprint({
-        "rows": metadata["rows"],
-        "columns": len(metadata["columns"]),
+        "rows": int(metadata["rows"]),
+        "columns": int(len(metadata["columns"])),
         "report": report
     })
 

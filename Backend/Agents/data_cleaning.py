@@ -91,17 +91,16 @@ def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates()
 
 def generate_metadata(df: pd.DataFrame) -> Dict[str, Any]:
-        """
-        Generate metadata for downstream agents
-        """
-        return {
-            "rows": int(df.shape[0]),
-            "columns": list(df.columns),
-            "numeric_columns": df.select_dtypes(include="number").columns.tolist(),
-            "categorical_columns": df.select_dtypes(include="object").columns.tolist(),
-            "datetime_columns": df.select_dtypes(include="datetime").columns.tolist(),
-            "missing_values": df.isnull().sum().to_dict()
+    return {
+        "rows": int(df.shape[0]),
+        "columns": list(df.columns),
+        "numeric_columns": df.select_dtypes(include="number").columns.tolist(),
+        "categorical_columns": df.select_dtypes(include="object").columns.tolist(),
+        "datetime_columns": df.select_dtypes(include="datetime").columns.tolist(),
+        "missing_values": {
+            col: int(val) for col, val in df.isnull().sum().items()
         }
+    }
 
 
 def Preprocess_data(file_path:str):
