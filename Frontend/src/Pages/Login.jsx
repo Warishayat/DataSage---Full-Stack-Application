@@ -6,7 +6,7 @@ import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const { login } = useAuth(); // Context function
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -15,14 +15,12 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Direct call to your FastAPI backend
-      const response = await axios.post('http://localhost:8000/auth/login', formData);
-      
-      // Update Context status (Saves to localStorage and state)
+      const response = await axios.post('https://datasage-backend-jrjo.onrender.com/auth/login', formData);
+    
       login(response.data.access_token, response.data.user);
       
       toast.success("Welcome back to DataSage!");
-      navigate('/chat-csv'); // Redirect to main app
+      navigate('/chat-csv'); 
     } catch (err) {
       const errorMsg = err.response?.data?.detail || "Invalid Email or Password";
       toast.error(errorMsg);

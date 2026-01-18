@@ -23,7 +23,7 @@ const Insight = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:8000/upload/upload-csv/', formData, {
+      const response = await axios.post('https://datasage-backend-jrjo.onrender.com/upload/upload-csv/', formData, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data' 
@@ -68,7 +68,7 @@ const Insight = () => {
           </div>
         </div>
 
-        {/* STAT TABS - Same as Home Style */}
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           <StatTab icon={<Hash size={16}/>} label="Total Rows" value={data.metadata?.rows} color="emerald" />
           <StatTab icon={<Columns size={16}/>} label="Data Features" value={data.metadata?.columns?.length} color="cyan" />
@@ -100,10 +100,7 @@ const Insight = () => {
                </div>
             </div>
           </div>
-
-          {/* RISK & RECOMMENDATION CARDS - Clean Borders */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Risks */}
             <div className="bg-red-500/[0.03] border border-red-500/10 p-10 rounded-[2.5rem]">
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-2 bg-red-500/20 rounded-lg text-red-400"><ShieldAlert size={22} /></div>
@@ -164,7 +161,7 @@ const Insight = () => {
   );
 };
 
-// --- CHART RENDERER (LOGIC UNTOUCHED, STYLES UPDATED) ---
+
 const ChartRenderer = ({ chart }) => {
   const isBar = chart.type === 'bar';
   const isScatter = chart.type === 'scatter';

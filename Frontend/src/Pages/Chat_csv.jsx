@@ -30,7 +30,7 @@ const Chat_csv = () => {
     formData.append('file', selectedFile);
 
     try {
-      await axios.post('http://localhost:8000/csv-chat/upload', formData, {
+      await axios.post('https://datasage-backend-jrjo.onrender.com/csv-chat/upload', formData, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data' 
@@ -58,7 +58,7 @@ const Chat_csv = () => {
     setChatLoading(true);
 
     try {
-      const response = await axios.post(`http://localhost:8000/csv-chat/chat?question=${encodeURIComponent(currentInput)}`, {}, {
+      const response = await axios.post(`https://datasage-backend-jrjo.onrender.com/csv-chat/chat?question=${encodeURIComponent(currentInput)}`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setMessages(prev => [...prev, { role: 'bot', content: response.data.answer }]);

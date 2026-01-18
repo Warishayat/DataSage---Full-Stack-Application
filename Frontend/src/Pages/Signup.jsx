@@ -13,7 +13,7 @@ const Signup = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/auth/register', formData);
+      const response = await axios.post('https://datasage-backend-jrjo.onrender.com/auth/register', formData);
       toast.success(response.data.message || "Registration Successful!");
       navigate('/login');
     } catch (err) {

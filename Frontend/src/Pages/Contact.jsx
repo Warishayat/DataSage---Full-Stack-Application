@@ -12,7 +12,7 @@ const Contact = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/contact/send', formData);
+      const response = await axios.post('https://datasage-backend-jrjo.onrender.com/contact/send', formData);
       toast.success(response.data.message);
       setFormData({ name: '', email: '', topic: '', message: '' });
     } catch (err) {
