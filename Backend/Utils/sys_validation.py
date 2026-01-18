@@ -16,6 +16,12 @@ class Uploadcsv(BaseModel):
     file_path:str
 
 
+class ChatwithusValidation(BaseModel):
+    name:str
+    email:EmailStr
+    topic:str
+    message:str
+
 import numpy as np
 
 def sanitize(obj):
