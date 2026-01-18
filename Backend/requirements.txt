@@ -6,6 +6,7 @@ langchain_google_genai
 numpy
 pandas
 fastapi
+supabase
 uvicorn
 pydantic
 pydantic[email]
@@ -13,3 +14,6 @@ langchain_huggingface
 sentence_transformers
 passlib[bcrypt]
 python-multipart 
+python-jose[cryptography]
+torch
+--extra-index-url https://download.pytorch.org/whl/cpu
