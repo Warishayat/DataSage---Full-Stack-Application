@@ -1,29 +1,19 @@
 import os
-import gc
 import pandas as pd
 from typing import TypedDict
 
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
-
-from langchain_community.document_loaders import CSVLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 
-
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
 
 class GraphState(TypedDict):
     question: str
     context: str
     answer: str
-
 
 llm = ChatGroq(
     model="openai/gpt-oss-20b",
@@ -31,104 +21,89 @@ llm = ChatGroq(
     api_key=GROQ_API_KEY
 )
 
+# ---------- CSV HELPERS (LIGHTWEIGHT) ----------
 
-# ===== GLOBAL CACHED OBJECTS (ADDED) =====
-_embeddings = None
-_vectorstore = None
-_retriever = None
-_metadata = None
+def load_csv_once(file_path: str) -> pd.DataFrame:
+    return pd.read_csv(file_path)
 
-
-def get_csv_metadata(file_path: str):
-    df = pd.read_csv(file_path, nrows=300)
+def get_csv_metadata(df: pd.DataFrame):
     return {
         "columns": list(df.columns),
-        "total_columns": len(df.columns)
+        "total_columns": len(df.columns),
+        "total_rows": len(df),
+        "dtypes": df.dtypes.astype(str).to_dict()
     }
 
+def build_csv_summary(df: pd.DataFrame, max_rows: int = 5) -> str:
+    sample = df.head(max_rows)
+    return sample.to_csv(index=False)
 
-def load_data(file_path: str):
-    loader = CSVLoader(file_path=file_path)
-    data = loader.load()
-    return data[:300]
+def get_relevant_rows(df: pd.DataFrame, question: str, limit: int = 8) -> str:
+    keywords = question.lower().split()
+    mask = pd.Series([False] * len(df))
 
+    for col in df.columns:
+        if df[col].dtype == object:
+            mask = mask | df[col].str.lower().str.contains("|".join(keywords), na=False)
 
-def preprocess_data(data):
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=230,
-        chunk_overlap=12
-    )
-    return splitter.split_documents(data)
+    filtered = df[mask].head(limit)
+    if filtered.empty:
+        return "No directly matching rows found."
 
+    return filtered.to_csv(index=False)
 
-def load_embeddings():
-    global _embeddings
-    if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/paraphrase-MiniLM-L3-v2"
-        )
-    return _embeddings
-
-
-def create_vectorstore(documents, embeddings):
-    return FAISS.from_documents(
-        documents=documents,
-        embedding=embeddings
-    )
-
+# ---------- PROMPT ----------
 
 def build_prompt(metadata):
     return ChatPromptTemplate.from_template(
         """
-You are an AI assistant chatting with a CSV dataset.
+You are an AI assistant answering questions about a CSV dataset.
 
-STRICT OUTPUT RULES (MANDATORY):
-- Never use bold text.
-- Never use markdown.
-- Never format text into columns or lists.
-- Write plain sentences only.
-- Do not emphasize words.
-- Do not decorate the response in any way.
+STRICT OUTPUT RULES:
+Never use bold.
+Never use markdown.
+Never create lists or tables.
+Only plain sentences.
 
-BEHAVIOR RULES:
-- Never count rows or values unless explicitly asked.
-- Column-related questions must be answered using metadata only.
-- Do not infer numbers from context text.
-- If a question is ambiguous, ask for clarification in one simple sentence.
-- If information is not available, say: Not available in dataset.
-
-Dataset Metadata:
+DATASET INFO:
+Total Rows: {total_rows}
 Total Columns: {total_columns}
-Column Names: {columns}
+Columns: {columns}
+Data Types: {dtypes}
 
-Context (only for data-level questions):
+SAMPLE ROWS:
+{sample}
+
+RELEVANT ROWS (question-based):
 {context}
 
 Question:
 {question}
 
-Answer:
+Answer clearly using only the dataset.
+If data is not available, say: Not available in dataset.
 """
     )
 
+# ---------- GRAPH ----------
 
-def build_csv_chat_graph(retriever, metadata, llm):
+def build_csv_chat_graph(df, metadata, llm):
 
     prompt = build_prompt(metadata)
 
     def retrieve_node(state: GraphState):
-        docs = retriever.invoke(state["question"])
-        context = "\n".join(d.page_content for d in docs)
-        del docs
-        gc.collect()
-        return {"context": context}
+        relevant_text = get_relevant_rows(df, state["question"])
+        return {"context": relevant_text}
 
     def generate_node(state: GraphState):
         messages = prompt.format_messages(
             question=state["question"],
             context=state["context"],
             columns=", ".join(metadata["columns"]),
-            total_columns=metadata["total_columns"]
+            total_columns=metadata["total_columns"],
+            total_rows=metadata["total_rows"],
+            dtypes=metadata["dtypes"],
+            sample=build_csv_summary(df)
         )
         response = llm.invoke(messages)
         return {"answer": response.content}
@@ -142,37 +117,27 @@ def build_csv_chat_graph(retriever, metadata, llm):
 
     return graph.compile()
 
-
-# ===== SINGLE TIME INITIALIZATION (CHANGED) =====
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-filepath = os.path.join(BASE_DIR, "Data", "CVD Dataset.csv")
-
-if _vectorstore is None:
-    _metadata = get_csv_metadata(filepath)
-    raw_data = load_data(filepath)
-    docs = preprocess_data(raw_data)
-    embeddings = load_embeddings()
-    _vectorstore = create_vectorstore(docs, embeddings)
-    _retriever = _vectorstore.as_retriever(search_kwargs={"k": 4})
-
-    del raw_data, docs
-    gc.collect()
-
-CHAT_GRAPH = build_csv_chat_graph(
-    retriever=_retriever,
-    metadata=_metadata,
-    llm=llm
-)
-
+# ---------- MAIN ----------
 
 if __name__ == "__main__":
 
-    print("CSV Chat Ready (type 'exit' to quit)\n")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filepath = os.path.join(BASE_DIR, "Data", "CVD Dataset.csv")
+
+    df = load_csv_once(filepath)
+    metadata = get_csv_metadata(df)
+
+    CHAT_GRAPH = build_csv_chat_graph(
+        df=df,
+        metadata=metadata,
+        llm=llm
+    )
+
+    print("Lightweight CSV Chat Ready\n")
 
     while True:
-        query = input("User: ")
-        if query.lower() == "exit":
+        q = input("User: ")
+        if q.lower() == "exit":
             break
-
-        result = CHAT_GRAPH.invoke({"question": query})
+        result = CHAT_GRAPH.invoke({"question": q})
         print("Assistant:", result["answer"], "\n")
