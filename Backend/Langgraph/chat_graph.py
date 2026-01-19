@@ -1,4 +1,5 @@
 import os
+import gc
 import pandas as pd
 from typing import TypedDict
 
@@ -31,8 +32,15 @@ llm = ChatGroq(
 )
 
 
+# ===== GLOBAL CACHED OBJECTS (ADDED) =====
+_embeddings = None
+_vectorstore = None
+_retriever = None
+_metadata = None
+
+
 def get_csv_metadata(file_path: str):
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path, nrows=300)
     return {
         "columns": list(df.columns),
         "total_columns": len(df.columns)
@@ -41,7 +49,8 @@ def get_csv_metadata(file_path: str):
 
 def load_data(file_path: str):
     loader = CSVLoader(file_path=file_path)
-    return loader.load()
+    data = loader.load()
+    return data[:300]
 
 
 def preprocess_data(data):
@@ -53,9 +62,12 @@ def preprocess_data(data):
 
 
 def load_embeddings():
-    return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/paraphrase-MiniLM-L3-v2"
+        )
+    return _embeddings
 
 
 def create_vectorstore(documents, embeddings):
@@ -107,6 +119,8 @@ def build_csv_chat_graph(retriever, metadata, llm):
     def retrieve_node(state: GraphState):
         docs = retriever.invoke(state["question"])
         context = "\n".join(d.page_content for d in docs)
+        del docs
+        gc.collect()
         return {"context": context}
 
     def generate_node(state: GraphState):
@@ -129,25 +143,31 @@ def build_csv_chat_graph(retriever, metadata, llm):
     return graph.compile()
 
 
-if __name__ == "__main__":
+# ===== SINGLE TIME INITIALIZATION (CHANGED) =====
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+filepath = os.path.join(BASE_DIR, "Data", "CVD Dataset.csv")
 
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(BASE_DIR, "Data", "CVD Dataset.csv")
-
-    metadata = get_csv_metadata(filepath)
+if _vectorstore is None:
+    _metadata = get_csv_metadata(filepath)
     raw_data = load_data(filepath)
     docs = preprocess_data(raw_data)
     embeddings = load_embeddings()
-    vectorstore = create_vectorstore(docs, embeddings)
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+    _vectorstore = create_vectorstore(docs, embeddings)
+    _retriever = _vectorstore.as_retriever(search_kwargs={"k": 4})
 
-    CHAT_GRAPH = build_csv_chat_graph(
-        retriever=retriever,
-        metadata=metadata,
-        llm=llm
-    )
+    del raw_data, docs
+    gc.collect()
 
-    print("\nCSV Chat Ready (type 'exit' to quit)\n")
+CHAT_GRAPH = build_csv_chat_graph(
+    retriever=_retriever,
+    metadata=_metadata,
+    llm=llm
+)
+
+
+if __name__ == "__main__":
+
+    print("CSV Chat Ready (type 'exit' to quit)\n")
 
     while True:
         query = input("User: ")
