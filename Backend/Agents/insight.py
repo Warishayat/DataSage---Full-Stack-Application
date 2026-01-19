@@ -4,6 +4,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from typing import Any, Dict
 from Agents.Schemas import InsightResponse
+import re
+import json
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -64,12 +66,35 @@ def prepare_insight_context(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Di
 def insight_agent(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
     clean_eda = prepare_insight_context(eda, metadata)
 
-    response = json_model.invoke(
+    response = Model.invoke(
         prompt.format_messages(
             eda=clean_eda,
             metadata=clean_eda["dataset_info"]
         )
     )
+
+    text = response.content
+
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {
+            "summary": "",
+            "key_insights": [],
+            "risks": [],
+            "recommendations": []
+        }
+
+    try:
+        data = json.loads(match.group())
+    except Exception:
+        data = {}
+
+    data.setdefault("summary", "")
+    data.setdefault("key_insights", [])
+    data.setdefault("risks", [])
+    data.setdefault("recommendations", [])
+
+    return data
 
     data = response.model_dump()
 
