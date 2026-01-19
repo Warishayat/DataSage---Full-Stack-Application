@@ -46,13 +46,17 @@ async def upload_csv(
             f.write(content)
 
         initial_state: DataState = {
-            "file_path": temp_path,
-            "df": None,
-            "metadata": None,
-            "eda": None,
-            "charts": None,
-            "insights": None,
-            "report": None,
+        "file_path": temp_path,
+        "df": None,
+        "metadata": None,
+        "eda": None,
+        "charts": None,
+        "insights": None,
+        "report": None,
+        "summary": "",
+        "key_insights": [],
+        "risks": [],
+        "recommendations": [],
         }
 
         result = Analysis_graph.invoke(initial_state,config={"configurable":{"user_id":str(user_id)}})
