@@ -107,6 +107,5 @@ npm run dev
 
 <div align="center">
 <p>Developed with passion for Data Democratization 💚</p>
-<img src="https://www.google.com/search?q=https://capsule-render.vercel.app/api%3Ftype%3Dwaving%26color%3D059669%26height%3D100%26section%3Dfooter" width="100%" />
 </div>
 
