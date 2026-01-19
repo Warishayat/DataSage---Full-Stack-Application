@@ -17,6 +17,8 @@ Model = ChatGroq(
     api_key=GROQ_API_KEY
 )
 
+json_model = Model.with_structured_output(schema=InsightResponse)
+
 prompt = ChatPromptTemplate.from_messages([
     ("system", """
 You are a senior data analyst AI.
@@ -62,21 +64,22 @@ def prepare_insight_context(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Di
 def insight_agent(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
     clean_eda = prepare_insight_context(eda, metadata)
 
-    response = Model.invoke(
+    response = json_model.invoke(
         prompt.format_messages(
             eda=clean_eda,
             metadata=clean_eda["dataset_info"]
         )
     )
 
-    text = response.content.strip()
+    data = response.model_dump()
 
     return {
-        "summary": text,
-        "key_insights": [],
-        "risks": [],
-        "recommendations": []
+        "summary": data.get("summary", ""),
+        "key_insights": data.get("key_insights", []),
+        "risks": data.get("risks", []),
+        "recommendations": data.get("recommendations", [])
     }
+
 
 
 if __name__ == "__main__":
