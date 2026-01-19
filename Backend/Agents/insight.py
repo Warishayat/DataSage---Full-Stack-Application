@@ -33,9 +33,6 @@ Metadata:
 """)
 ])
 
-Json_model = Model.with_structured_output(schema=InsightResponse)
-
-
 def sanitize(obj: Any) -> Any:
     if isinstance(obj, dict):
         return {k: sanitize(v) for k, v in obj.items()}
@@ -64,17 +61,22 @@ def prepare_insight_context(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Di
 
 def insight_agent(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
     clean_eda = prepare_insight_context(eda, metadata)
-    response = Json_model.invoke(
+
+    response = Model.invoke(
         prompt.format_messages(
             eda=clean_eda,
             metadata=clean_eda["dataset_info"]
         )
     )
-    data = response.model_dump()
-    data.setdefault("summary", "")
-    data.setdefault("risks", [])
-    data.setdefault("recommendations", [])
-    return data
+
+    text = response.content.strip()
+
+    return {
+        "summary": text,
+        "key_insights": [],
+        "risks": [],
+        "recommendations": []
+    }
 
 
 if __name__ == "__main__":
