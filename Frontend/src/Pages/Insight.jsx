@@ -262,16 +262,29 @@ const UploadScreen = ({ handleUpload }) => (
     <div className="bg-emerald-500/10 p-12 rounded-full mb-10 ring-1 ring-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
       <LayoutDashboard size={48} className="text-emerald-400" />
     </div>
+    
     <h1 className="text-5xl font-black tracking-tighter mb-6 not-italic">
       Insight <span className="text-emerald-400 font-outline-2 text-6xl">Studio.</span>
     </h1>
+    
     <p className="text-gray-500 text-sm mb-12 max-w-sm font-bold uppercase tracking-[0.2em] leading-relaxed not-italic">
       Professional Data Diagnostic Agent
     </p>
-    <label className="cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-12 py-5 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center gap-3 not-italic">
-      <FileUp size={18} /> Initialize Analysis
-      <input type="file" className="hidden" accept=".csv" onChange={handleUpload} />
-    </label>
+
+    <div className="space-y-6 flex flex-col items-center">
+      <label className="cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-12 py-5 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center gap-3 not-italic">
+        <FileUp size={18} /> Initialize Analysis
+        <input type="file" className="hidden" accept=".csv" onChange={handleUpload} />
+      </label>
+
+      {/* Instance Warning Note */}
+      <div className="max-w-xs p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex items-start gap-3">
+        <ShieldAlert size={16} className="text-amber-500 shrink-0 mt-0.5" />
+        <p className="text-[10px] text-amber-500/80 font-bold uppercase tracking-wider leading-relaxed text-left">
+          Using Free Instance: Server may take <span className="text-amber-400 underline underline-offset-4">45+ seconds</span> to wake up on the first request.
+        </p>
+      </div>
+    </div>
   </div>
 );
 

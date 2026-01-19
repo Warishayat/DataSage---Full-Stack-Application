@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, FileUp, Database, Loader2, User, Bot, RefreshCw } from 'lucide-react';
+import { Send, FileUp, Database, Loader2, User, Bot, RefreshCw, ShieldAlert } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -39,7 +39,7 @@ const Chat_csv = () => {
           }
         }
       );
-            setFile(selectedFile);
+      setFile(selectedFile);
       setIsUploaded(true);
       toast.success("CSV Engine Ready!");
       setMessages([{ role: 'bot', content: `Dataset "${selectedFile.name}" analyzed successfully. How can I assist your research today?` }]);
@@ -62,14 +62,14 @@ const Chat_csv = () => {
 
     try {
       const response = await axios.post(
-      `https://datasage-backend-jrjo.onrender.com/csv-chat/chat/?question=${encodeURIComponent(currentInput)}`,
-      null,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+        `https://datasage-backend-jrjo.onrender.com/csv-chat/chat/?question=${encodeURIComponent(currentInput)}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    );
+      );
       setMessages(prev => [...prev, { role: 'bot', content: response.data.answer }]);
     } catch (err) {
       toast.error("Query processing error");
@@ -105,11 +105,21 @@ const Chat_csv = () => {
               <h2 className="text-4xl font-black mb-4 tracking-tighter">Query <span className="text-emerald-400 font-outline-2">Dataset</span></h2>
               <p className="text-gray-500 text-sm mb-10 font-bold uppercase tracking-[0.2em] not-italic">Natural Language Data Processing</p>
               
-              <label className="cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-12 py-4 rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-emerald-500/10">
-                {loading ? <Loader2 className="animate-spin" /> : <FileUp size={20} />}
-                <span className="text-xs uppercase tracking-widest">{loading ? "Synchronizing..." : "Initialize CSV Chat"}</span>
-                <input type="file" className="hidden" accept=".csv" onChange={handleFileUpload} disabled={loading} />
-              </label>
+              <div className="flex flex-col items-center gap-6">
+                <label className="cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-12 py-4 rounded-2xl flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-emerald-500/10">
+                  {loading ? <Loader2 className="animate-spin" /> : <FileUp size={20} />}
+                  <span className="text-xs uppercase tracking-widest">{loading ? "Synchronizing..." : "Initialize CSV Chat"}</span>
+                  <input type="file" className="hidden" accept=".csv" onChange={handleFileUpload} disabled={loading} />
+                </label>
+
+                {/* HIGHLIGHTED DISCLAIMER */}
+                <div className="max-w-xs p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex items-start gap-3">
+                  <ShieldAlert size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-amber-500/80 font-bold uppercase tracking-wider leading-relaxed text-left">
+                    Note: Using <span className="text-amber-400">Free Instance</span>. Initial wake-up may require <span className="text-white">45+ seconds</span> of processing time.
+                  </p>
+                </div>
+              </div>
             </motion.div>
           ) : (
             <motion.div 
