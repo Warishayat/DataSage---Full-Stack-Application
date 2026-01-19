@@ -4,7 +4,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from typing import Any, Dict
 from Agents.Schemas import InsightResponse
-from Agents.State import DataState
 import re
 import json
 import warnings
@@ -45,6 +44,7 @@ def sanitize(obj: Any) -> Any:
         return obj.item()
     return obj
 
+
 def prepare_insight_context(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
     return sanitize({
         "overview": eda.get("overview", {}),
@@ -60,8 +60,9 @@ def prepare_insight_context(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Di
         }
     })
 
-def insight_agent(state: DataState) -> DataState:
-    clean_eda = prepare_insight_context(state["eda"], state["metadata"])
+
+def insight_agent(eda: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
+    clean_eda = prepare_insight_context(eda, metadata)
 
     response = Model.invoke(
         prompt.format_messages(
@@ -70,23 +71,43 @@ def insight_agent(state: DataState) -> DataState:
         )
     )
 
-    text = response.content
+    text = response.content or ""
+
     match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {
+            "summary": "",
+            "key_insights": [],
+            "risks": [],
+            "recommendations": []
+        }
 
-    if match:
-        try:
-            insights = json.loads(match.group())
-        except Exception:
-            insights = {}
-    else:
-        insights = {}
-
-    insights.setdefault("summary", "")
-    insights.setdefault("key_insights", [])
-    insights.setdefault("risks", [])
-    insights.setdefault("recommendations", [])
+    try:
+        data = json.loads(match.group())
+    except Exception:
+        data = {}
 
     return {
-        **state,
-        "insights": insights
+        "summary": data.get("summary", ""),
+        "key_insights": data.get("key_insights", []),
+        "risks": data.get("risks", []),
+        "recommendations": data.get("recommendations", [])
     }
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+    from Agents.data_cleaning import Preprocess_data
+    from Agents.eda import run_eda_agent
+
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filepath = os.path.join(BASE_DIR, "Data", "Heart_Disease_Prediction.csv")
+
+    data = Preprocess_data(filepath)
+    df = data["dataframe"]
+    metadata = data["metadata"]
+
+    eda = run_eda_agent(df)
+    insights = insight_agent(eda, metadata)
+
+    pprint(insights)
